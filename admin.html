@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - Generar QR</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 500px; margin: auto; }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; }
+        #qr-code { margin-top: 20px; display: flex; justify-content: center; }
+        nav { margin-bottom: 20px; }
+        nav a { margin-right: 15px; text-decoration: none; color: blue; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html">Ir al Escáner</a>
+            <a href="informes.html">Ver Informes</a>
+        </nav>
+        <h2>Registrar Persona y Generar QR</h2>
+        <input type="text" id="nombre" placeholder="Nombre completo" required>
+        <input type="text" id="departamento" placeholder="Departamento o Puesto" required>
+        <button id="btn-guardar">Guardar y Generar QR</button>
+
+        <div id="mensaje"></div>
+        <div id="qr-code"></div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        document.getElementById('btn-guardar').addEventListener('click', async () => {
+            const nombre = document.getElementById('nombre').value;
+            const departamento = document.getElementById('departamento').value;
+            const mensajeDiv = document.getElementById('mensaje');
+            const qrDiv = document.getElementById('qr-code');
+
+            if(!nombre || !departamento) {
+                mensajeDiv.innerHTML = "<p style='color:red'>Completa todos los campos.</p>";
+                return;
+            }
+
+            try {
+                // 1. Guardar en Firestore
+                const docRef = await addDoc(collection(db, "usuarios"), {
+                    nombre: nombre,
+                    departamento: departamento,
+                    fechaRegistro: new Date()
+                });
+
+                mensajeDiv.innerHTML = `<p style='color:green'>Usuario guardado. ID: ${docRef.id}</p>`;
+                
+                // 2. Generar el QR con el ID del documento
+                qrDiv.innerHTML = ""; // Limpiar QR anterior
+                new QRCode(qrDiv, {
+                    text: docRef.id,
+                    width: 200,
+                    height: 200
+                });
+
+                document.getElementById('nombre').value = '';
+                document.getElementById('departamento').value = '';
+
+            } catch (e) {
+                console.error("Error al añadir documento: ", e);
+                mensajeDiv.innerHTML = "<p style='color:red'>Error al guardar.</p>";
+            }
+        });
+    </script>
+</body>
+</html>

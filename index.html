@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Asistencia QR</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: auto; }
+        #resultado { margin-top: 20px; font-size: 1.2em; font-weight: bold; color: green; }
+        nav { margin-bottom: 20px; }
+        nav a { margin-right: 15px; text-decoration: none; color: blue; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin.html">Agregar Usuarios</a>
+        <a href="informes.html">Ver Informes</a>
+    </nav>
+    
+    <h1>Control de Asistencia</h1>
+    <div id="reader"></div>
+    <div id="resultado">Esperando escaneo...</div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Variable para evitar múltiples escaneos rápidos del mismo código
+        let lastScan = "";
+
+        async function onScanSuccess(decodedText) {
+            if (decodedText === lastScan) return;
+            lastScan = decodedText;
+            
+            const resultadoDiv = document.getElementById('resultado');
+            resultadoDiv.style.color = "blue";
+            resultadoDiv.innerText = "Registrando asistencia...";
+
+            try {
+                await addDoc(collection(db, "asistencias"), {
+                    usuarioId: decodedText,
+                    timestamp: new Date()
+                });
+                resultadoDiv.style.color = "green";
+                resultadoDiv.innerText = "¡Asistencia registrada con éxito!";
+                
+                // Reiniciar el escáner después de 3 segundos
+                setTimeout(() => { 
+                    lastScan = ""; 
+                    resultadoDiv.innerText = "Esperando siguiente escaneo...";
+                }, 3000);
+
+            } catch (e) {
+                console.error("Error: ", e);
+                resultadoDiv.style.color = "red";
+                resultadoDiv.innerText = "Error al registrar.";
+                lastScan = "";
+            }
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+        html5QrcodeScanner.render(onScanSuccess, (error) => { /* Ignorar errores de búsqueda de QR */ });
+    </script>
+</body>
+</html>
