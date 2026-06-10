@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #007bff; color: white; }
@@ -15,6 +15,9 @@
         nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
         .btn-accion { background-color: #28a745; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; display: inline-block; }
         .btn-accion:hover { background-color: #218838; }
+        /* Estilo para el botón de eliminar */
+        .btn-eliminar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-eliminar:hover { background-color: #bd2130; }
         .cargando { text-align: center; font-style: italic; color: #666; }
     </style>
 </head>
@@ -32,10 +35,10 @@
                     <tr>
                         <th>Fecha y Hora</th>
                         <th>ID de Usuario (Código QR)</th>
-                    </tr>
+                        <th>Acciones</th> </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan='2' class="cargando">Cargando datos en tiempo real...</td></tr>
+                    <tr><td colspan='3' class="cargando">Cargando datos en tiempo real...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -45,7 +48,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // Agregamos doc y deleteDoc para permitir la eliminación
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // === TU CONFIGURACIÓN DE FIREBASE ===
         const firebaseConfig = {
@@ -62,29 +66,60 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Escuchar la base de datos en tiempo real
         const tbody = document.querySelector("#tabla-asistencias tbody");
         const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
 
+        // Escuchar cambios en tiempo real
         onSnapshot(q, (querySnapshot) => {
             tbody.innerHTML = "";
             if (querySnapshot.empty) {
-                tbody.innerHTML = "<tr><td colspan='2' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
                 return;
             }
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
+            querySnapshot.forEach((documento) => {
+                const data = documento.data();
                 let fechaLegible = "Sin fecha";
                 if (data.timestamp) {
                     fechaLegible = data.timestamp.toDate().toLocaleString('es-GT');
                 }
-                tbody.innerHTML += `<tr><td>${fechaLegible}</td><td>${data.usuarioId}</td></tr>`;
+                
+                // Agregamos el botón con el ID único del documento de Firebase
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${fechaLegible}</td>
+                        <td>${data.usuarioId}</td>
+                        <td>
+                            <button class="btn-eliminar" data-id="${documento.id}">❌ Eliminar</button>
+                        </td>
+                    </tr>`;
+            });
+
+            // Asignar la función de eliminar a todos los botones generados
+            document.querySelectorAll('.btn-eliminar').forEach(boton => {
+                boton.addEventListener('click', async (e) => {
+                    const idDocumento = e.target.getAttribute('data-id');
+                    if (confirm("¿Estás seguro de que deseas eliminar este registro de asistencia?")) {
+                        try {
+                            // Eliminar el documento directamente de Firestore
+                            await deleteDoc(doc(db, "asistencias", idDocumento));
+                            alert("Registro eliminado con éxito.");
+                        } catch (error) {
+                            console.error("Error al eliminar:", error);
+                            alert("No se pudo eliminar el registro.");
+                        }
+                    }
+                });
             });
         });
 
         // Lógica para generar el PDF
         document.getElementById('btn-descargar-pdf').addEventListener('click', () => {
             const elemento = document.getElementById('contenido-reporte');
+            
+            // Ocultamos temporalmente los botones de eliminar para que no salgan en el PDF impreso
+            const botonesEliminar = document.querySelectorAll('.btn-eliminar');
+            botonesEliminar.forEach(b => b.style.display = 'none');
+
             const opciones = {
                 margin: 0.5,
                 filename: `Reporte_Asistencias_${new Date().toISOString().slice(0,10)}.pdf`,
@@ -93,8 +128,10 @@
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             
-            // Genera y descarga el archivo automáticamente
-            html2pdf().set(opciones).from(elemento).save();
+            html2pdf().set(opciones).from(elemento).save().then(() => {
+                // Volvemos a mostrar los botones en la pantalla después de generar el PDF
+                botonesEliminar.forEach(b => b.style.display = 'inline-block');
+            });
         });
     </script>
 </body>
