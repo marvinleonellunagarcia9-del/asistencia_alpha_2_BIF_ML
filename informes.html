@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Informes de Asistencia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
         .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
@@ -12,6 +13,8 @@
         th { background-color: #007bff; color: white; }
         nav { margin-bottom: 20px; text-align: center; }
         nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        .btn-accion { background-color: #28a745; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; display: inline-block; }
+        .btn-accion:hover { background-color: #218838; }
         .cargando { text-align: center; font-style: italic; color: #666; }
     </style>
 </head>
@@ -22,25 +25,29 @@
             <a href="admin.html">Agregar Usuarios</a>
         </nav>
         
-        <h2>Reporte de Asistencias</h2>
-        <table id="tabla-asistencias">
-            <thead>
-                <tr>
-                    <th>Fecha y Hora</th>
-                    <th>ID de Usuario (Código QR)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td colspan='2' class="cargando">Cargando datos desde Firebase...</td></tr>
-            </tbody>
-        </table>
+        <div id="contenido-reporte">
+            <h2>Reporte de Asistencias Online</h2>
+            <table id="tabla-asistencias">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>ID de Usuario (Código QR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan='2' class="cargando">Cargando datos en tiempo real...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button id="btn-descargar-pdf" class="btn-accion">📄 Descargar Reporte en PDF</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // === PEGA AQUÍ TUS MISMAS CREDENCIALES REALES DE FIREBASE ===
+        // === TU CONFIGURACIÓN DE FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
   authDomain: "asistenciabifml.firebaseapp.com",
@@ -52,52 +59,43 @@
   measurementId: "G-VVG07BDQGH"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function cargarInformes() {
-            const tbody = document.querySelector("#tabla-asistencias tbody");
+        // Escuchar la base de datos en tiempo real
+        const tbody = document.querySelector("#tabla-asistencias tbody");
+        const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
 
-            try {
-                // Consultar asistencias ordenadas de la más reciente a la más antigua
-                const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
-                const querySnapshot = await getDocs(q);
-                
-                tbody.innerHTML = ""; // Limpiar el mensaje de "Cargando..."
-
-                if (querySnapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='2' style='text-align:center;'>No hay asistencias registradas aún.</td></tr>";
-                    return;
-                }
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    
-                    // Convertir el formato de tiempo de Firebase a una fecha y hora normal
-                    let fechaLegible = "Fecha desconocida";
-                    if (data.timestamp) {
-                        fechaLegible = data.timestamp.toDate().toLocaleString('es-ES', { 
-                            dateStyle: 'medium', 
-                            timeStyle: 'medium' 
-                        });
-                    }
-                    
-                    const fila = `<tr>
-                        <td>${fechaLegible}</td>
-                        <td>${data.usuarioId}</td>
-                    </tr>`;
-                    tbody.innerHTML += fila;
-                });
-
-            } catch (e) {
-                console.error("Error al cargar informes: ", e);
-                tbody.innerHTML = `<tr><td colspan='2' style='color:red; text-align:center;'>Error al conectar con Firebase: ${e.message}</td></tr>`;
+        onSnapshot(q, (querySnapshot) => {
+            tbody.innerHTML = "";
+            if (querySnapshot.empty) {
+                tbody.innerHTML = "<tr><td colspan='2' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
+                return;
             }
-        }
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                let fechaLegible = "Sin fecha";
+                if (data.timestamp) {
+                    fechaLegible = data.timestamp.toDate().toLocaleString('es-GT');
+                }
+                tbody.innerHTML += `<tr><td>${fechaLegible}</td><td>${data.usuarioId}</td></tr>`;
+            });
+        });
 
-        // Ejecutar la carga de datos en cuanto abre la página
-        cargarInformes();
+        // Lógica para generar el PDF
+        document.getElementById('btn-descargar-pdf').addEventListener('click', () => {
+            const elemento = document.getElementById('contenido-reporte');
+            const opciones = {
+                margin: 0.5,
+                filename: `Reporte_Asistencias_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            // Genera y descarga el archivo automáticamente
+            html2pdf().set(opciones).from(elemento).save();
+        });
     </script>
 </body>
 </html>
