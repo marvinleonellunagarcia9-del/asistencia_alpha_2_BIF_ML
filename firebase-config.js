@@ -1,16 +1,22 @@
-// firebase-config.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_MESSAGING_ID",
-    appId: "TU_APP_ID"
+  apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
+  authDomain: "asistenciabifml.firebaseapp.com",
+  databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
+  projectId: "asistenciabifml",
+  storageBucket: "asistenciabifml.firebasestorage.app",
+  messagingSenderId: "831773431166",
+  appId: "1:831773431166:web:90c37497734c43a84e8f2f",
+  measurementId: "G-VVG07BDQGH"
 };
 
-// Inicializar Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const analytics = getAnalytics(app);
