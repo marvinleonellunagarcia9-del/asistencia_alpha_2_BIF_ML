@@ -7,9 +7,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
         th { background-color: #007bff; color: white; }
         nav { margin-bottom: 20px; text-align: center; }
         nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
@@ -18,6 +18,7 @@
         .btn-eliminar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-eliminar:hover { background-color: #bd2130; }
         .cargando { text-align: center; font-style: italic; color: #666; }
+        .foto-perfil { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -33,13 +34,14 @@
                 <thead>
                     <tr>
                         <th>Fecha y Hora</th>
+                        <th>Foto</th>
                         <th>Nombre</th>
                         <th>Departamento / Puesto</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan='4' class="cargando" id="estado-tabla">Cargando datos en tiempo real...</td></tr>
+                    <tr><td colspan='5' class="cargando" id="estado-tabla">Cargando datos en tiempo real...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -51,8 +53,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // === TU CONFIGURACIÓN DE FIREBASE ===
-        const firebaseConfig = {
+        // === PEGA AQUÍ TUS CREDENCIALES REALES DE FIREBASE ===
+      const firebaseConfig = {
           apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
   authDomain: "asistenciabifml.firebaseapp.com",
   databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
@@ -74,7 +76,7 @@
                 tbody.innerHTML = "";
                 
                 if (querySnapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
                     return;
                 }
 
@@ -91,13 +93,15 @@
                             }
                         }
                         
-                        // Jalar las nuevas variables de Nombre y Departamento de la asistencia
                         const nombre = data.nombre || "ID: " + data.usuarioId;
                         const departamento = data.departamento || "No especificado";
+                        const fotoUrl = data.fotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80";
 
+                        // MODIFICACIÓN: Agregado crossorigin="anonymous" a la etiqueta de la imagen
                         tbody.innerHTML += `
                             <tr>
                                 <td>${fechaLegible}</td>
+                                <td><img src="${fotoUrl}" class="foto-perfil" alt="Perfil" crossorigin="anonymous"></td>
                                 <td><strong>${nombre}</strong></td>
                                 <td>${departamento}</td>
                                 <td>
@@ -105,11 +109,10 @@
                                 </td>
                             </tr>`;
                     } catch (errInner) {
-                        console.error("Error individual:", errInner);
+                        console.error(errInner);
                     }
                 });
 
-                // Funcionalidad de eliminar
                 document.querySelectorAll('.btn-eliminar').forEach(boton => {
                     boton.onclick = async (e) => {
                         const idDocumento = e.target.getAttribute('data-id');
@@ -137,11 +140,12 @@
             const botonesEliminar = document.querySelectorAll('.btn-eliminar');
             botonesEliminar.forEach(b => b.style.display = 'none');
 
+            // MODIFICACIÓN: Agregado useCORS: true en html2canvas
             const opciones = {
                 margin: 0.5,
                 filename: `Reporte_Asistencias_${new Date().toISOString().slice(0,10)}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
+                html2canvas: { scale: 2, useCORS: true }, 
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             
