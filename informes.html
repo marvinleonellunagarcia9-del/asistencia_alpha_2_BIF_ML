@@ -18,7 +18,7 @@
         .btn-eliminar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-eliminar:hover { background-color: #bd2130; }
         .cargando { text-align: center; font-style: italic; color: #666; }
-        .foto-perfil { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
+        .foto-perfil { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; background-color: #eee; }
     </style>
 </head>
 <body>
@@ -54,7 +54,7 @@
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // === PEGA AQUÍ TUS CREDENCIALES REALES DE FIREBASE ===
-      const firebaseConfig = {
+   const firebaseConfig = {
           apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
   authDomain: "asistenciabifml.firebaseapp.com",
   databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
@@ -95,9 +95,10 @@
                         
                         const nombre = data.nombre || "ID: " + data.usuarioId;
                         const departamento = data.departamento || "No especificado";
-                        const fotoUrl = data.fotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80";
+                        
+                        // Si no hay foto, generamos una con sus iniciales que es amigable con los PDFs
+                        const fotoUrl = data.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=random`;
 
-                        // MODIFICACIÓN: Agregado crossorigin="anonymous" a la etiqueta de la imagen
                         tbody.innerHTML += `
                             <tr>
                                 <td>${fechaLegible}</td>
@@ -134,18 +135,21 @@
             console.error(errGlobal);
         }
 
-        // Lógica PDF
+        // Lógica PDF CORREGIDA
         document.getElementById('btn-descargar-pdf').addEventListener('click', () => {
+            // 1. Subir el scroll hasta arriba para evitar páginas en blanco
+            window.scrollTo(0, 0);
+            
             const elemento = document.getElementById('contenido-reporte');
             const botonesEliminar = document.querySelectorAll('.btn-eliminar');
             botonesEliminar.forEach(b => b.style.display = 'none');
 
-            // MODIFICACIÓN: Agregado useCORS: true en html2canvas
+            // 2. Opciones de PDF ajustadas para que la captura no se desplace
             const opciones = {
                 margin: 0.5,
-                filename: `Reporte_Asistencias_${new Date().toISOString().slice(0,10)}.pdf`,
+                filename: `Reporte_Asistencias.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true }, 
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             
