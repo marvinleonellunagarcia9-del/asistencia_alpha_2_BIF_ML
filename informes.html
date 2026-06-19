@@ -9,7 +9,7 @@
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
         .container { max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #007bff; color: white; }
         nav { margin-bottom: 20px; text-align: center; }
         nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
@@ -18,7 +18,6 @@
         .btn-eliminar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-eliminar:hover { background-color: #bd2130; }
         .cargando { text-align: center; font-style: italic; color: #666; }
-        .foto-perfil { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; background-color: #eee; }
     </style>
 </head>
 <body>
@@ -28,20 +27,19 @@
             <a href="admin.html">Agregar Usuarios</a>
         </nav>
         
-        <div id="contenido-reporte">
-            <h2>Reporte de Asistencias Online</h2>
+        <div id="contenido-reporte" style="padding: 10px; background: white;">
+            <h2 style="text-align: center; color: #333;">Reporte de Asistencias</h2>
             <table id="tabla-asistencias">
                 <thead>
                     <tr>
                         <th>Fecha y Hora</th>
-                        <th>Foto</th>
                         <th>Nombre</th>
                         <th>Departamento / Puesto</th>
-                        <th>Acciones</th>
+                        <th class="columna-acciones">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan='5' class="cargando" id="estado-tabla">Cargando datos en tiempo real...</td></tr>
+                    <tr><td colspan='4' class="cargando" id="estado-tabla">Cargando datos...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -54,7 +52,7 @@
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // === PEGA AQUÍ TUS CREDENCIALES REALES DE FIREBASE ===
-   const firebaseConfig = {
+       const firebaseConfig = {
           apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
   authDomain: "asistenciabifml.firebaseapp.com",
   databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
@@ -65,96 +63,76 @@
   measurementId: "G-VVG07BDQGH"
         };
 
-        try {
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-            const tbody = document.querySelector("#tabla-asistencias tbody");
-            const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
+        const tbody = document.querySelector("#tabla-asistencias tbody");
+        const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
 
-            onSnapshot(q, (querySnapshot) => {
-                tbody.innerHTML = "";
-                
-                if (querySnapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
-                    return;
+        onSnapshot(q, (querySnapshot) => {
+            tbody.innerHTML = "";
+            
+            if (querySnapshot.empty) {
+                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No hay asistencias registradas.</td></tr>";
+                return;
+            }
+
+            querySnapshot.forEach((documento) => {
+                const data = documento.data();
+                let fechaLegible = "Sin fecha";
+                if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+                    fechaLegible = data.timestamp.toDate().toLocaleString('es-GT');
                 }
+                
+                const nombre = data.nombre || "ID: " + data.usuarioId;
+                const departamento = data.departamento || "No especificado";
 
-                querySnapshot.forEach((documento) => {
-                    try {
-                        const data = documento.data();
-                        let fechaLegible = "Sin fecha";
-                        
-                        if (data.timestamp) {
-                            if (typeof data.timestamp.toDate === 'function') {
-                                fechaLegible = data.timestamp.toDate().toLocaleString('es-GT');
-                            } else {
-                                fechaLegible = new Date(data.timestamp).toLocaleString('es-GT');
-                            }
-                        }
-                        
-                        const nombre = data.nombre || "ID: " + data.usuarioId;
-                        const departamento = data.departamento || "No especificado";
-                        
-                        // Si no hay foto, generamos una con sus iniciales que es amigable con los PDFs
-                        const fotoUrl = data.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=random`;
-
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${fechaLegible}</td>
-                                <td><img src="${fotoUrl}" class="foto-perfil" alt="Perfil" crossorigin="anonymous"></td>
-                                <td><strong>${nombre}</strong></td>
-                                <td>${departamento}</td>
-                                <td>
-                                    <button class="btn-eliminar" data-id="${documento.id}">❌ Eliminar</button>
-                                </td>
-                            </tr>`;
-                    } catch (errInner) {
-                        console.error(errInner);
-                    }
-                });
-
-                document.querySelectorAll('.btn-eliminar').forEach(boton => {
-                    boton.onclick = async (e) => {
-                        const idDocumento = e.target.getAttribute('data-id');
-                        if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-                            try {
-                                await deleteDoc(doc(db, "asistencias", idDocumento));
-                            } catch (error) {
-                                alert("No se pudo eliminar.");
-                            }
-                        }
-                    };
-                });
-
-            }, (error) => {
-                document.getElementById("estado-tabla").innerText = "Error: " + error.message;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${fechaLegible}</td>
+                        <td><strong>${nombre}</strong></td>
+                        <td>${departamento}</td>
+                        <td class="columna-acciones">
+                            <button class="btn-eliminar" data-id="${documento.id}">❌ Eliminar</button>
+                        </td>
+                    </tr>`;
             });
 
-        } catch (errGlobal) {
-            console.error(errGlobal);
-        }
+            document.querySelectorAll('.btn-eliminar').forEach(boton => {
+                boton.onclick = async (e) => {
+                    const idDocumento = e.target.getAttribute('data-id');
+                    if (confirm("¿Eliminar este registro?")) {
+                        try { await deleteDoc(doc(db, "asistencias", idDocumento)); } 
+                        catch (error) { alert("No se pudo eliminar."); }
+                    }
+                };
+            });
+        });
 
-        // Lógica PDF CORREGIDA
+        // Lógica PDF ARREGLADA
         document.getElementById('btn-descargar-pdf').addEventListener('click', () => {
-            // 1. Subir el scroll hasta arriba para evitar páginas en blanco
+            // Se manda la página hasta arriba antes de capturar
             window.scrollTo(0, 0);
             
+            // Capturamos el contenedor limpio
             const elemento = document.getElementById('contenido-reporte');
-            const botonesEliminar = document.querySelectorAll('.btn-eliminar');
-            botonesEliminar.forEach(b => b.style.display = 'none');
+            
+            // Ocultamos toda la columna de acciones (títulos y botones)
+            const elementosAcciones = document.querySelectorAll('.columna-acciones');
+            elementosAcciones.forEach(el => el.style.display = 'none');
 
-            // 2. Opciones de PDF ajustadas para que la captura no se desplace
             const opciones = {
-                margin: 0.5,
-                filename: `Reporte_Asistencias.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                margin:       0.5,
+                filename:     `Reporte_Asistencias.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+                pagebreak:    { mode: 'avoid-all' } // Evita que la tabla se rompa o deje espacios en blanco
             };
             
             html2pdf().set(opciones).from(elemento).save().then(() => {
-                botonesEliminar.forEach(b => b.style.display = 'inline-block');
+                // Devolvemos los botones a la pantalla al terminar
+                elementosAcciones.forEach(el => el.style.display = '');
             });
         });
     </script>
