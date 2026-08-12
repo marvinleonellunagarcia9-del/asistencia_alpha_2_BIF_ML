@@ -4,20 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Informes de Asistencia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
-        .container { max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #007bff; color: white; }
-        nav { margin-bottom: 20px; text-align: center; }
-        nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .btn-accion { background-color: #28a745; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; display: inline-block; }
-        .btn-accion:hover { background-color: #218838; }
-        .btn-eliminar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-eliminar:hover { background-color: #bd2130; }
-        .cargando { text-align: center; font-style: italic; color: #666; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: #334e68;
+        }
+        
+        .container { 
+            max-width: 950px; 
+            margin: 30px auto; 
+            background: #ffffff; 
+            padding: 30px 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+        }
+
+        nav { 
+            margin-bottom: 30px; 
+            text-align: center; 
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        nav a { 
+            text-decoration: none; 
+            color: #ffffff; 
+            background-color: #2b5c8f; 
+            padding: 10px 20px;
+            border-radius: 20px; 
+            font-weight: 600; 
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(43, 92, 143, 0.2);
+        }
+        nav a:hover {
+            background-color: #1a4066;
+            transform: translateY(-2px);
+        }
+
+        /* Estilo para los filtros (Texto y Fecha) */
+        .caja-filtros {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .input-filtro {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 20px;
+            border: 2px solid #bcccdc;
+            border-radius: 25px;
+            font-family: inherit;
+            font-size: 1em;
+            color: #334e68;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .input-filtro:focus {
+            border-color: #2b5c8f;
+        }
+        #btn-limpiar {
+            background-color: #94a3b8;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #btn-limpiar:hover {
+            background-color: #64748b;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+            border-radius: 8px;
+            overflow: hidden; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        th, td { 
+            padding: 15px 12px; 
+            text-align: left; 
+            border-bottom: 1px solid #edf2f7;
+        }
+        th { 
+            background-color: #2b5c8f; 
+            color: white; 
+            font-weight: 600;
+        }
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .btn-accion { 
+            background-color: #10b981; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            font-weight: 600; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-top: 25px; 
+            display: inline-block; 
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+        .btn-accion:hover { 
+            background-color: #059669; 
+            transform: translateY(-2px);
+        }
+
+        .btn-eliminar { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-family: inherit;
+            transition: background-color 0.2s;
+        }
+        .btn-eliminar:hover { 
+            background-color: #dc2626; 
+        }
+
+        .cargando { 
+            text-align: center; 
+            font-style: italic; 
+            color: #94a3b8; 
+            padding: 20px !important;
+        }
     </style>
 </head>
 <body>
@@ -27,8 +156,15 @@
             <a href="admin.html">Agregar Usuarios</a>
         </nav>
         
-        <div id="contenido-reporte" style="padding: 10px; background: white;">
-            <h2 style="text-align: center; color: #333;">Reporte de Asistencias</h2>
+        <!-- Zona de Filtros Combinados -->
+        <div class="caja-filtros">
+            <input type="text" id="filtro-nombre" class="input-filtro" placeholder="🔍 Buscar nombre o depto...">
+            <input type="date" id="filtro-fecha" class="input-filtro" title="Filtrar por fecha específica">
+            <button id="btn-limpiar" title="Borrar filtros">Limpiar</button>
+        </div>
+
+        <div id="contenido-reporte" style="padding: 20px; background: white;">
+            <h2 id="titulo-reporte" style="text-align: center; color: #102a43; margin-bottom: 20px;">Reporte de Asistencias</h2>
             <table id="tabla-asistencias">
                 <thead>
                     <tr>
@@ -44,7 +180,9 @@
             </table>
         </div>
 
-        <button id="btn-descargar-pdf" class="btn-accion">📄 Descargar Reporte en PDF</button>
+        <div style="text-align: center;">
+            <button id="btn-descargar-pdf" class="btn-accion">📄 Descargar Reporte en PDF</button>
+        </div>
     </div>
 
     <script type="module">
@@ -54,13 +192,13 @@
         // === PEGA AQUÍ TUS CREDENCIALES REALES DE FIREBASE ===
        const firebaseConfig = {
           apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
-  authDomain: "asistenciabifml.firebaseapp.com",
-  databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
-  projectId: "asistenciabifml",
-  storageBucket: "asistenciabifml.firebasestorage.app",
-  messagingSenderId: "831773431166",
-  appId: "1:831773431166:web:90c37497734c43a84e8f2f",
-  measurementId: "G-VVG07BDQGH"
+          authDomain: "asistenciabifml.firebaseapp.com",
+          databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
+          projectId: "asistenciabifml",
+          storageBucket: "asistenciabifml.firebasestorage.app",
+          messagingSenderId: "831773431166",
+          appId: "1:831773431166:web:90c37497734c43a84e8f2f",
+          measurementId: "G-VVG07BDQGH"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -68,6 +206,50 @@
 
         const tbody = document.querySelector("#tabla-asistencias tbody");
         const q = query(collection(db, "asistencias"), orderBy("timestamp", "desc"));
+
+        // Función para aplicar filtros combinados (Texto + Fecha)
+        function aplicarFiltros() {
+            const termino = document.getElementById('filtro-nombre').value.toLowerCase();
+            const fechaFiltro = document.getElementById('filtro-fecha').value; // Formato YYYY-MM-DD
+            const filas = document.querySelectorAll("#tabla-asistencias tbody tr");
+            const titulo = document.getElementById('titulo-reporte');
+            
+            // Ajustar el título para el PDF
+            if (termino !== "" || fechaFiltro !== "") {
+                titulo.innerText = `Reporte de Asistencias - Filtrado`;
+            } else {
+                titulo.innerText = `Reporte de Asistencias`;
+            }
+
+            filas.forEach(fila => {
+                if(fila.cells.length === 1) return; // Ignorar fila de "Cargando"
+
+                const nombre = fila.cells[1].textContent.toLowerCase();
+                const departamento = fila.cells[2].textContent.toLowerCase();
+                const fechaFila = fila.getAttribute('data-fecha'); // Fecha oculta en formato YYYY-MM-DD
+
+                // Verificamos si cumple ambas condiciones
+                const coincideTexto = nombre.includes(termino) || departamento.includes(termino);
+                const coincideFecha = (fechaFiltro === "") || (fechaFiltro === fechaFila);
+
+                if (coincideTexto && coincideFecha) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            });
+        }
+
+        // Escuchadores de eventos para los filtros
+        document.getElementById('filtro-nombre').addEventListener('input', aplicarFiltros);
+        document.getElementById('filtro-fecha').addEventListener('change', aplicarFiltros);
+        
+        // Botón para limpiar todo
+        document.getElementById('btn-limpiar').addEventListener('click', () => {
+            document.getElementById('filtro-nombre').value = "";
+            document.getElementById('filtro-fecha').value = "";
+            aplicarFiltros();
+        });
 
         onSnapshot(q, (querySnapshot) => {
             tbody.innerHTML = "";
@@ -80,15 +262,25 @@
             querySnapshot.forEach((documento) => {
                 const data = documento.data();
                 let fechaLegible = "Sin fecha";
+                let fechaParaFiltro = ""; // Variable para guardar la fecha en formato del calendario
+
                 if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-                    fechaLegible = data.timestamp.toDate().toLocaleString('es-GT');
+                    const fechaObj = data.timestamp.toDate();
+                    fechaLegible = fechaObj.toLocaleString('es-GT');
+                    
+                    // Extraemos YYYY-MM-DD para comparar fácilmente con el calendario
+                    const yyyy = fechaObj.getFullYear();
+                    const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                    const dd = String(fechaObj.getDate()).padStart(2, '0');
+                    fechaParaFiltro = `${yyyy}-${mm}-${dd}`;
                 }
                 
                 const nombre = data.nombre || "ID: " + data.usuarioId;
                 const departamento = data.departamento || "No especificado";
 
+                // Le agregamos el atributo data-fecha al tr para que el buscador lo encuentre fácil
                 tbody.innerHTML += `
-                    <tr>
+                    <tr data-fecha="${fechaParaFiltro}">
                         <td>${fechaLegible}</td>
                         <td><strong>${nombre}</strong></td>
                         <td>${departamento}</td>
@@ -107,17 +299,15 @@
                     }
                 };
             });
+
+            // Re-aplicamos filtros al recibir nuevos datos
+            aplicarFiltros();
         });
 
-        // Lógica PDF ARREGLADA
+        // Lógica PDF
         document.getElementById('btn-descargar-pdf').addEventListener('click', () => {
-            // Se manda la página hasta arriba antes de capturar
             window.scrollTo(0, 0);
-            
-            // Capturamos el contenedor limpio
             const elemento = document.getElementById('contenido-reporte');
-            
-            // Ocultamos toda la columna de acciones (títulos y botones)
             const elementosAcciones = document.querySelectorAll('.columna-acciones');
             elementosAcciones.forEach(el => el.style.display = 'none');
 
@@ -127,11 +317,10 @@
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak:    { mode: 'avoid-all' } // Evita que la tabla se rompa o deje espacios en blanco
+                pagebreak:    { mode: 'avoid-all' } 
             };
             
             html2pdf().set(opciones).from(elemento).save().then(() => {
-                // Devolvemos los botones a la pantalla al terminar
                 elementosAcciones.forEach(el => el.style.display = '');
             });
         });

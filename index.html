@@ -4,14 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lector de Asistencia QR</title>
+    <!-- Importamos una fuente más moderna de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f9f9f9; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        #reader { width: 100%; max-width: 400px; margin: auto; border: 2px dashed #007bff; border-radius: 8px; overflow: hidden; background-color: #fafafa; }
-        #resultado { margin-top: 20px; font-size: 1.2em; font-weight: bold; color: #333; padding: 12px; border-radius: 4px; }
-        nav { margin-bottom: 20px; text-align: center; }
-        nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        /* Diseño general más suave y moderno */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: #334e68;
+        }
+        
+        /* Contenedor principal tipo tarjeta */
+        .container { 
+            max-width: 550px; 
+            margin: 30px auto; 
+            background: #ffffff; 
+            padding: 30px 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+        }
+
+        h1 {
+            color: #102a43;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+        }
+
+        /* Botones de navegación */
+        nav { 
+            margin-bottom: 30px; 
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        nav a { 
+            text-decoration: none; 
+            color: #ffffff; 
+            background-color: #2b5c8f; 
+            padding: 10px 20px;
+            border-radius: 20px; 
+            font-weight: 600; 
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(43, 92, 143, 0.2);
+        }
+        nav a:hover {
+            background-color: #1a4066;
+            transform: translateY(-2px);
+        }
+
+        /* Área del escáner más limpia */
+        #reader { 
+            width: 100%; 
+            max-width: 400px; 
+            margin: auto; 
+            border: 2px solid #bcccdc; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            background-color: #f8f9fa; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        /* Mensaje de resultado animado */
+        #resultado { 
+            margin-top: 25px; 
+            font-size: 1.1em; 
+            font-weight: 600; 
+            color: #486581; 
+            padding: 15px; 
+            border-radius: 8px; 
+            transition: all 0.3s ease;
+            min-height: 25px;
+        }
+
+        /* Estilos extra para los botones que genera la librería del QR */
+        #reader button {
+            background-color: #2b5c8f !important;
+            color: white !important;
+            border: none !important;
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-family: inherit !important;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        #reader button:hover {
+            background-color: #1a4066 !important;
+        }
     </style>
 </head>
 <body>
@@ -34,13 +119,13 @@
         // === PEGA AQUÍ TUS CREDENCIALES REALES DE FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyCFFZvpTY292Ilq_vCGaSFOk4MNQersDtg",
-  authDomain: "asistenciabifml.firebaseapp.com",
-  databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
-  projectId: "asistenciabifml",
-  storageBucket: "asistenciabifml.firebasestorage.app",
-  messagingSenderId: "831773431166",
-  appId: "1:831773431166:web:90c37497734c43a84e8f2f",
-  measurementId: "G-VVG07BDQGH"
+            authDomain: "asistenciabifml.firebaseapp.com",
+            databaseURL: "https://asistenciabifml-default-rtdb.firebaseio.com",
+            projectId: "asistenciabifml",
+            storageBucket: "asistenciabifml.firebasestorage.app",
+            messagingSenderId: "831773431166",
+            appId: "1:831773431166:web:90c37497734c43a84e8f2f",
+            measurementId: "G-VVG07BDQGH"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -54,7 +139,7 @@
             
             const resultadoDiv = document.getElementById('resultado');
             resultadoDiv.style.backgroundColor = "#e6f2ff";
-            resultadoDiv.style.color = "#007bff";
+            resultadoDiv.style.color = "#2b5c8f";
             resultadoDiv.innerText = "Buscando usuario y registrando...";
 
             try {
@@ -85,7 +170,7 @@
                 setTimeout(() => { 
                     lastScan = ""; 
                     resultadoDiv.style.backgroundColor = "transparent";
-                    resultadoDiv.style.color = "#333";
+                    resultadoDiv.style.color = "#486581";
                     resultadoDiv.innerText = "Esperando siguiente escaneo...";
                 }, 3000);
 
